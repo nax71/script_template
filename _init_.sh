@@ -1,11 +1,9 @@
 # init script
 
 init() {
-
     # This function init somme global parameters and source
     # the configuration files
-    # The logfile is created also in config.sh file.
-    # This script is not to be launched alone.
+    # This script is not to be executed alone.
 
     # my name
     ME=$(basename "$0")
@@ -18,15 +16,12 @@ init() {
 
     # where I am
     ROOTDIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-    #echo "[$ME] [$(date "+%F %H:%M:%S")] [INFO    ] ROOTDIR: $ROOTDIR"
 
     # get the uuid for this process
     UUID=$(cat /proc/sys/kernel/random/uuid)
 
-    STEP_NAME="START          "
-
     # source config environnement
-    CONFIG_FILE=${ROOTDIR}/config/config.sh
+    CONFIG_FILE=${ROOTDIR}/config/default.cfg
 
     if [[ -f "${CONFIG_FILE}" ]]; then
         . $CONFIG_FILE
@@ -34,13 +29,23 @@ init() {
         echo "[$ME] [$(date "+%F %H:%M:%S")] [CRITICAL] No config file found. Searched {$CONFIG_FILE}. STOP"
         exit 1
     fi
+
+    shopt -s nullglob
+    for cfg_file in $CONFDIR/*.cfg; do
+        if [ "$cfg_file" != "$CONFIG_FILE" ]; then
+            echo "[$(date "+%F %H:%M:%S")] [INFO ]: Sourcing config file $cfg_file."
+            . $cfg_file
+        fi
+    done
     
-    # init DEBUG_TRACE if not init to avoid errros of  non init variable
+    # init DEBUG_TRACE if not init to avoid errros of non init variable
     if [ -z "$DEBUG_TRACE" ]; then
         DEBUG_TRACE=0
     fi
 }
 
 init
+# exit at first error
 set -o errexit
+# exit if unset variable
 set -o nounset
